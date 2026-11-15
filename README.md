@@ -1,6 +1,6 @@
 # SYMStocks
 
-Global stock watchlist and paper-portfolio simulator.
+US equity market tracker focused on custom watchlists. No portfolio or paper-trading module.
 
 ## Local setup
 ```bash
@@ -9,30 +9,29 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Add your Twelve Data key to `.env.local`:
+## Market data
+
+The Dashboard requests the top 100 US stocks by daily trading volume from Alpaca's most-active screener and retrieves IEX quote snapshots.
+
+Create a free Alpaca account and add these server-side environment variables:
 ```bash
-TWELVE_DATA_API_KEY=your_key_here
+ALPACA_API_KEY=your_key
+ALPACA_API_SECRET=your_secret
 ```
-Never expose the key in browser code or commit it to Git.
 
-## Deploy on Vercel
-1. Import `krymyc/SYMStocks` from GitHub as a Next.js project.
-2. Keep the Root Directory as `./` and use the default build settings.
-3. Add the Environment Variable `TWELVE_DATA_API_KEY` for Production, Preview and Development.
-4. Redeploy after saving the variable.
+Never expose credentials in browser code or commit them to Git.
 
-## Market-data endpoints
-- `/api/health` — confirms whether a server-side key is configured (does not expose it).
-- `/api/quote?symbol=NVDA` — latest provider quote.
-- `/api/history?symbol=NVDA&interval=1day&outputsize=90` — historical time series.
-- `/api/search?q=semiconductor` — provider symbol search.
+The free Alpaca Basic market-data plan has limited real-time US equity coverage (IEX), not consolidated all-exchange volume. Alpaca documents its most-active endpoint as SIP-based; availability of that endpoint under Basic must be confirmed with the account. If the endpoint is not entitled, the dashboard will show a market-data error rather than fabricate a ranking.
 
-The Markets view searches the local starter universe and Twelve Data. The selected instrument's quote and chart use Twelve Data when available. Sample values remain clearly labelled when provider data is unavailable. API usage and real-time exchange access depend on the Twelve Data plan and exchange entitlements.
+Optional `TWELVE_DATA_API_KEY` remains for the existing individual-symbol search, quote and history adapters. It is not used by the Dashboard's top-volume list.
 
-## Current scope
-- Dashboard, global starter universe and watchlists.
-- Browser-session paper portfolios.
-- Yahoo Finance CSV parsing and preview (not yet persisted).
-- Twelve Data server-side quote, history and symbol-search adapters.
+## Vercel
+Add `ALPACA_API_KEY` and `ALPACA_API_SECRET` under Settings → Environment Variables for Production, Preview and Development, then redeploy. Add `TWELVE_DATA_API_KEY` only if continuing to use its optional endpoints.
 
-This is a monitoring and paper-simulation tool, not a broker or investment advice service.
+## Endpoints
+- `/api/market/most-active` — top 100 US most-active symbols by volume and IEX snapshots.
+- `/api/quote?symbol=NVDA` — optional Twelve Data quote.
+- `/api/history?symbol=NVDA&interval=1day&outputsize=90` — optional Twelve Data history.
+- `/api/search?q=semiconductor` — optional Twelve Data symbol search.
+
+Watchlists are stored locally in the browser. CSV import currently supports watchlist creation from portfolio snapshots and preview of historical data; imported data is not a persistent market-data source.
