@@ -29,3 +29,12 @@
 .theme-choice.chosen{outline:2px solid #5e2638;outline-offset:2px}
 .theme-swatch{width:25px;height:25px;border-radius:6px;border:1px solid #a99}
 .dark-swatch{background:#10151e}.light-swatch{background:#eee5d2}
+
+.market-metrics{background:#263241}
+.market-metric{background:#101720;padding:13px 15px;min-width:0}
+.theme-light .market-metrics{background:#d3c2a6}
+.theme-light .market-metric{background:#f3ead9}
+.theme-light .market-metric .label{color:#765c58}
+.theme-light .market-metric .mono{color:#4a2330}
+.theme-light .market-metric .green{color:#24734f}
+.theme-light .market-metric .red{color:#a33343}
