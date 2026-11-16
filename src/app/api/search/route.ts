@@ -11,6 +11,25 @@ type SearchResult = {
   instrument_type?: string;
 };
 
+const US_EXCHANGES = [
+  "NASDAQ", "NYSE", "NYSE ARCA", "NYSE AMERICAN", "NYSE MKT",
+  "AMEX", "CBOE BZX", "CBOE", "BATS", "IEX",
+];
+
+function isUsListed(exchange: string) {
+  const normalized = exchange.trim().toUpperCase().replace(/\\s+/g, " ");
+  return US_EXCHANGES.some((name) => normalized === name || normalized.startsWith(name + " "));
+}
+
+const ALLOWED_TYPES = new Set([
+  "common stock",
+  "stock",
+  "etf",
+  "american depositary receipt",
+  "depositary receipt",
+  "global depositary receipt",
+]);
+
 export async function GET(req: Request) {
   const q = new URL(req.url).searchParams.get("q")?.trim();
   const key = process.env.TWELVE_DATA_API_KEY?.trim();
@@ -20,6 +39,7 @@ export async function GET(req: Request) {
   try {
     const url = new URL("https://api.twelvedata.com/symbol_search");
     url.searchParams.set("symbol", q);
+    url.searchParams.set("outputsize", "60");
     url.searchParams.set("apikey", key);
     const response = await fetch(url, { next: { revalidate: 3600 } });
     const data = await response.json();
@@ -27,23 +47,20 @@ export async function GET(req: Request) {
       return NextResponse.json({ status: "unavailable", results: [], message: data.message ?? "Symbol search unavailable." }, { status: 502 });
     }
 
-    const allowedExchanges = /NASDAQ|NYSE|NYSE ARCA|NYSE MKT|AMEX|BATS|CBOE/i;
     const results = ((data.data ?? []) as SearchResult[])
       .filter((item) => {
-        const country = (item.country ?? "").toLowerCase();
-        const type = (item.instrument_type ?? "").toLowerCase();
         const exchange = item.exchange ?? "";
-        const isUS = country === "united states" || country === "usa" || allowedExchanges.test(exchange);
-        const isEquity = !type || type.includes("common stock") || type === "stock" || type === "etf";
-        return isUS && isEquity && Boolean(item.symbol);
+        const type = (item.instrument_type ?? "").trim().toLowerCase();
+        return isUsListed(exchange) && (!type || ALLOWED_TYPES.has(type));
       })
-      .slice(0, 25)
       .map((item) => ({
         symbol: item.symbol!,
         name: item.instrument_name ?? item.symbol!,
-        exchange: item.exchange ?? "US",
+        exchange: item.exchange!,
         currency: item.currency ?? "USD",
-      }));
+      }))
+      .filter((item) => Boolean(item.symbol))
+      .slice(0, 25);
 
     return NextResponse.json({ status: "provider", results });
   } catch {
