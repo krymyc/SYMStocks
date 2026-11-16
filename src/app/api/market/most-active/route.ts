@@ -2,6 +2,48 @@ import {NextResponse} from "next/server";
 
 export const dynamic = "force-dynamic";
 
+type NasdaqRow = { symbol?: string; marketCap?: string | number | null };
+
+async function loadMarketCaps(): Promise<{ values: Map<string, number>; asOf: string | null }> {
+  const values = new Map<string, number>();
+  let asOf: string | null = null;
+  const exchanges = ["nasdaq", "nyse", "amex"];
+
+  await Promise.all(exchanges.map(async (exchange) => {
+    try {
+      const url = new URL("https://api.nasdaq.com/api/screener/stocks");
+      url.searchParams.set("tableonly", "true");
+      url.searchParams.set("limit", "5000");
+      url.searchParams.set("offset", "0");
+      url.searchParams.set("exchange", exchange);
+      const response = await fetch(url, {
+        headers: {
+          accept: "application/json, text/plain, */*",
+          "user-agent": "Mozilla/5.0 (compatible; SYMStocks/1.0)",
+          origin: "https://www.nasdaq.com",
+          referer: "https://www.nasdaq.com/market-activity/stocks/screener",
+        },
+        cache: "no-store",
+      });
+      if (!response.ok) return;
+      const payload = await response.json();
+      const rows = payload?.data?.rows;
+      if (!Array.isArray(rows)) return;
+      asOf = asOf ?? payload?.data?.asof ?? null;
+      for (const row of rows as NasdaqRow[]) {
+        const symbol = String(row.symbol ?? "").trim().toUpperCase();
+        const raw = row.marketCap;
+        const marketCap = typeof raw === "number" ? raw : Number(String(raw ?? "").replace(/[$,\s]/g, ""));
+        if (symbol && Number.isFinite(marketCap) && marketCap > 0) values.set(symbol, marketCap);
+      }
+    } catch {
+      // Market-cap enrichment is optional; volume and quote data remain available.
+    }
+  }));
+
+  return { values, asOf };
+}
+
 export async function GET() {
   const key = process.env.ALPACA_API_KEY?.trim();
   const secret = process.env.ALPACA_API_SECRET?.trim();
@@ -19,7 +61,6 @@ export async function GET() {
     });
   }
 
-  // The missing-variable guard above guarantees both credentials exist.
   const headers: Record<string, string> = {
     "APCA-API-KEY-ID": key!,
     "APCA-API-SECRET-KEY": secret!,
@@ -58,6 +99,7 @@ export async function GET() {
       }
     }
 
+    const marketCaps = await loadMarketCaps();
     const results = actives.map((item) => {
       const snapshot = snapshots.get(item.symbol);
       const price = Number(snapshot?.latestTrade?.p ?? snapshot?.dailyBar?.c ?? 0);
@@ -73,6 +115,7 @@ export async function GET() {
         tradeCount: Number(item.trade_count) || 0,
         price,
         change,
+        marketCap: marketCaps.values.get(item.symbol.toUpperCase()) ?? null,
       };
     });
 
@@ -81,6 +124,8 @@ export async function GET() {
       source: "alpaca",
       lastUpdated: activeData.last_updated ?? new Date().toISOString(),
       feed: "IEX for quote snapshots",
+      marketCapSource: "Nasdaq stock screener",
+      marketCapAsOf: marketCaps.asOf,
       results,
     });
   } catch (error) {
