@@ -7,7 +7,7 @@ type NasdaqRow = { symbol?: string; marketCap?: string | number | null };
 async function loadMarketCaps(): Promise<{ values: Map<string, number>; asOf: string | null }> {
   const values = new Map<string, number>();
   let asOf: string | null = null;
-  const exchanges = ["nasdaq", "nyse", "amex"];
+  const exchanges = ["NASDAQ", "NYSE", "AMEX"];
 
   await Promise.all(exchanges.map(async (exchange) => {
     try {
