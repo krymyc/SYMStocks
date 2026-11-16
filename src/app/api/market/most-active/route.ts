@@ -19,12 +19,14 @@ export async function GET() {
     });
   }
 
+  // The missing-variable guard above guarantees both credentials exist.
+  const headers: Record<string, string> = {
+    "APCA-API-KEY-ID": key!,
+    "APCA-API-SECRET-KEY": secret!,
+    accept: "application/json",
+  };
+
   try {
-    const headers = {
-      "APCA-API-KEY-ID": key,
-      "APCA-API-SECRET-KEY": secret,
-      accept: "application/json",
-    };
     const activeUrl = new URL("https://data.alpaca.markets/v1beta1/screener/stocks/most-actives");
     activeUrl.searchParams.set("by", "volume");
     activeUrl.searchParams.set("top", "100");
