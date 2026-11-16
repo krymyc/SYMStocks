@@ -4,6 +4,32 @@ export const dynamic = "force-dynamic";
 
 type Bar = { t: string; c: number };
 type BarResponse = { bars?: Record<string, Bar[]> };
+type NasdaqRow = { symbol?: string; marketCap?: string | number | null };
+
+async function loadCaps(symbols: string[]) {
+  const caps = new Map<string, number>();
+  await Promise.all(["NASDAQ", "NYSE", "AMEX"].map(async exchange => {
+    try {
+      const url = new URL("https://api.nasdaq.com/api/screener/stocks");
+      url.searchParams.set("tableonly", "true"); url.searchParams.set("limit", "5000"); url.searchParams.set("offset", "0"); url.searchParams.set("exchange", exchange);
+      const response = await fetch(url, { headers: { accept: "application/json, text/plain, */*", "user-agent": "Mozilla/5.0 (compatible; SYMStocks/1.0)", origin: "https://www.nasdaq.com", referer: "https://www.nasdaq.com/market-activity/stocks/screener" }, next: { revalidate: 3600 } });
+      if (!response.ok) return;
+      const rows = (await response.json())?.data?.rows;
+      if (!Array.isArray(rows)) return;
+      for (const row of rows as NasdaqRow[]) {
+        const symbol = String(row.symbol ?? "").trim().toUpperCase();
+        if (!symbols.includes(symbol)) continue;
+        const raw = row.marketCap;
+        const text = String(raw ?? "").trim().replace(/[$,\\s]/g, "").toUpperCase();
+        const match = text.match(/^([0-9]*\\.?[0-9]+)([KMBT])?$/);
+        const scale = ({ K: 1e3, M: 1e6, B: 1e9, T: 1e12 } as Record<string, number>)[match?.[2] ?? ""] ?? 1;
+        const value = typeof raw === "number" ? raw : match ? Number(match[1]) * scale : Number.NaN;
+        if (symbol && Number.isFinite(value) && value > 0) caps.set(symbol, value);
+      }
+    } catch { /* Optional market-cap enrichment. */ }
+  }));
+  return caps;
+}
 
 export async function GET(req: Request) {
   const symbols = [...new Set((new URL(req.url).searchParams.get("symbols") ?? "")
@@ -32,6 +58,7 @@ export async function GET(req: Request) {
     const yearBars: BarResponse = yearResponse.ok ? await yearResponse.json() : {};
 
     const quotes: Record<string, unknown> = {};
+    const marketCaps = await loadCaps(symbols);
     for (const symbol of symbols) {
       const snap = snapshots[symbol];
       const price = Number(snap?.latestTrade?.p ?? snap?.dailyBar?.c ?? snap?.prevDailyBar?.c ?? 0) || null;
