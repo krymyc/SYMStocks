@@ -33,7 +33,7 @@ async function loadMarketCaps(): Promise<{ values: Map<string, number>; asOf: st
       for (const row of rows as NasdaqRow[]) {
         const symbol = String(row.symbol ?? "").trim().toUpperCase();
         const raw = row.marketCap;
-        const marketCap = typeof raw === "number" ? raw : Number(String(raw ?? "").replace(/[$,\s]/g, ""));
+        const marketCap = typeof raw === "number" ? raw : (() => { const text = String(raw ?? "").trim().replace(/[$,\s]/g, "").toUpperCase(); const match = text.match(/^([0-9]*\.?[0-9]+)([KMBT])?$/); if (!match) return Number.NaN; const scale = ({ K: 1e3, M: 1e6, B: 1e9, T: 1e12 } as Record<string, number>)[match[2] ?? ""] ?? 1; return Number(match[1]) * scale; })();
         if (symbol && Number.isFinite(marketCap) && marketCap > 0) values.set(symbol, marketCap);
       }
     } catch {
