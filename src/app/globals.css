@@ -4,3 +4,28 @@
 .company{font-size:12px;color:#aebdce;font-weight:500;line-height:1.45;margin-top:4px}.ticker{font-size:12px;font-weight:700;letter-spacing:.15px}td{vertical-align:middle}
 .sort-head{border:0;background:transparent;color:#aebdce;font:inherit;font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:0;cursor:pointer}.sort-head:hover{color:#e9edf4}
 .watchlist-chart{margin:12px 14px 16px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#0d141d}.watchlist-chart>.range{padding:10px 14px 0}.watchlist-chart .head{background:#101720}.watchlist-chart .notice{margin:12px}
+/* Warm light theme */
+.theme-light{--bg:#eee5d2;--panel:#f7f0e2;--line:#cbb99d;--green:#24734f;--red:#9b3945;--text:#35151e;color:var(--text);background:var(--bg);min-height:100vh}
+.theme-light .sidebar{background:#e5d9c2;border-color:var(--line)}
+.theme-light .brand,.theme-light .top h1,.theme-light .head strong,.theme-light .ticker,.theme-light .settings-content strong{color:#35151e}
+.theme-light .nav button{color:#654b4c}
+.theme-light .nav button.active,.theme-light .nav button:hover{background:#d8c6aa;color:#35151e}
+.theme-light .navlabel,.theme-light .eyebrow,.theme-light .label,.theme-light .sub,.theme-light .company,.theme-light th,.theme-light .foot{color:#775d5a}
+.theme-light .panel,.theme-light .watchlist-chart{background:#f7f0e2;border-color:#cbb99d}
+.theme-light .head,.theme-light td,.theme-light th,.theme-light .row{border-color:#d8c9b1}
+.theme-light td{color:#35151e}
+.theme-light .btn,.theme-light input,.theme-light select{background:#f2e8d7;border-color:#c4ad8c;color:#35151e}
+.theme-light .btn.primary{background:#5e2638;color:#fff4e6;border-color:#5e2638}
+.theme-light .pill{background:#e3d1ae;border-color:#c4a979;color:#5e2638}
+.theme-light .notice{background:#eadcc2;border-color:#c8ae83;color:#5e2638}
+.theme-light .tag,.theme-light .symbol{background:#e8dcc8;border-color:#cbb99d;color:#5e2638}
+.theme-light .range button{color:#765b59}
+.theme-light .range button.sel{background:#5e2638;color:#fff4e6}
+.theme-light .watchlist-chart .head,.theme-light .metric-cell,.theme-light .watchlist-chart{background:#f1e7d6}
+.theme-light .sort-head{color:#5e2638}
+.settings-content{padding:20px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.theme-options{display:flex;gap:10px}
+.theme-choice{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:8px;padding:10px 14px;background:transparent;color:inherit;cursor:pointer}
+.theme-choice.chosen{outline:2px solid #5e2638;outline-offset:2px}
+.theme-swatch{width:25px;height:25px;border-radius:6px;border:1px solid #a99}
+.dark-swatch{background:#10151e}.light-swatch{background:#eee5d2}
