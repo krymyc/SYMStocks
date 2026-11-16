@@ -3,3 +3,4 @@
 /* Improve company-name legibility in instrument rows */
 .company{font-size:12px;color:#aebdce;font-weight:500;line-height:1.45;margin-top:4px}.ticker{font-size:12px;font-weight:700;letter-spacing:.15px}td{vertical-align:middle}
 .sort-head{border:0;background:transparent;color:#aebdce;font:inherit;font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:0;cursor:pointer}.sort-head:hover{color:#e9edf4}
+.watchlist-chart{margin:12px 14px 16px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#0d141d}.watchlist-chart>.range{padding:10px 14px 0}.watchlist-chart .head{background:#101720}.watchlist-chart .notice{margin:12px}
