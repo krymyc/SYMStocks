@@ -20,8 +20,8 @@ async function loadCaps(symbols: string[]) {
         const symbol = String(row.symbol ?? "").trim().toUpperCase();
         if (!symbols.includes(symbol)) continue;
         const raw = row.marketCap;
-        const text = String(raw ?? "").trim().replace(/[$,\\s]/g, "").toUpperCase();
-        const match = text.match(/^([0-9]*\\.?[0-9]+)([KMBT])?$/);
+        const text = String(raw ?? "").trim().replace(/[$,\s]/g, "").toUpperCase();
+        const match = text.match(/^([0-9]*\.?[0-9]+)([KMBT])?$/);
         const scale = ({ K: 1e3, M: 1e6, B: 1e9, T: 1e12 } as Record<string, number>)[match?.[2] ?? ""] ?? 1;
         const value = typeof raw === "number" ? raw : match ? Number(match[1]) * scale : Number.NaN;
         if (symbol && Number.isFinite(value) && value > 0) caps.set(symbol, value);
