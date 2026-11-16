@@ -18,7 +18,7 @@ export async function GET(req: Request) {
   const params = new URL(req.url).searchParams;
   const symbol = params.get("symbol")?.trim().toUpperCase();
   const interval = params.get("interval") ?? "1day";
-  const outputsize = Math.min(1000, Math.max(1, Number(params.get("outputsize") ?? "90") || 90));
+  const outputsize = Math.min(5000, Math.max(1, Number(params.get("outputsize") ?? "90") || 90));
   if (!symbol || !/^[A-Z0-9.^=-]{1,20}$/.test(symbol)) {
     return NextResponse.json({ error: "Invalid symbol" }, { status: 400 });
   }
@@ -57,7 +57,7 @@ export async function GET(req: Request) {
     try {
       const url = new URL(`https://data.alpaca.markets/v2/stocks/${encodeURIComponent(symbol)}/bars`);
       url.searchParams.set("timeframe", alpacaTimeframe(interval));
-      url.searchParams.set("limit", String(outputsize));
+      url.searchParams.set("limit", String(Math.min(outputsize, 10000)));
       url.searchParams.set("feed", "iex");
       url.searchParams.set("sort", "asc");
       const response = await fetch(url, {
