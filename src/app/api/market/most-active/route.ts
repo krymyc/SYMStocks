@@ -27,7 +27,7 @@ async function loadMarketCaps(): Promise<{ values: Map<string, number>; asOf: st
       });
       if (!response.ok) return;
       const payload = await response.json();
-      const rows = payload?.data?.rows;
+      const rows = payload?.data?.rows ?? payload?.data?.table?.rows ?? payload?.data?.data?.rows ?? payload?.data?.data?.table?.rows;
       if (!Array.isArray(rows)) return;
       asOf = asOf ?? payload?.data?.asof ?? null;
       for (const row of rows as NasdaqRow[]) {
