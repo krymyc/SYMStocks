@@ -14,7 +14,8 @@ async function loadCaps(symbols: string[]) {
       url.searchParams.set("tableonly", "true"); url.searchParams.set("limit", "5000"); url.searchParams.set("offset", "0"); url.searchParams.set("exchange", exchange);
       const response = await fetch(url, { headers: { accept: "application/json, text/plain, */*", "user-agent": "Mozilla/5.0 (compatible; SYMStocks/1.0)", origin: "https://www.nasdaq.com", referer: "https://www.nasdaq.com/market-activity/stocks/screener" }, next: { revalidate: 3600 } });
       if (!response.ok) return;
-      const rows = (await response.json())?.data?.rows;
+      const payload = await response.json();
+      const rows = payload?.data?.rows ?? payload?.data?.table?.rows ?? payload?.data?.data?.rows ?? payload?.data?.data?.table?.rows;
       if (!Array.isArray(rows)) return;
       for (const row of rows as NasdaqRow[]) {
         const symbol = String(row.symbol ?? "").trim().toUpperCase();
