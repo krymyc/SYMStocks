@@ -47,32 +47,40 @@ export async function GET(req: Request) {
     snapshotsUrl.searchParams.set("symbols", symbols.join(","));
     snapshotsUrl.searchParams.set("feed", "iex");
 
-    const [snapshotResponse, monthResponse, yearResponse] = await Promise.all([
-      fetch(snapshotsUrl, { headers, cache: "no-store" }),
-      fetch(buildBarsUrl(symbols, 30), { headers, cache: "no-store" }),
-      fetch(buildBarsUrl(symbols, 260), { headers, cache: "no-store" }),
+    const oneYearAgo = new Date(Date.now() - 370 * 24 * 60 * 60 * 1000);
+    const barsUrl = buildBarsUrl(symbols, oneYearAgo);
+    const [snapshotResponse, barsResponse] = await Promise.all([
+      fetch(snapshotsUrl, { headers, next: { revalidate: 60 } }),
+      fetch(barsUrl, { headers, next: { revalidate: 300 } }),
     ]);
 
     const snapshots = snapshotResponse.ok ? await snapshotResponse.json() : {};
-    const monthBars: BarResponse = monthResponse.ok ? await monthResponse.json() : {};
-    const yearBars: BarResponse = yearResponse.ok ? await yearResponse.json() : {};
-
-    const quotes: Record<string, unknown> = {};
+    const historical: BarResponse = barsResponse.ok ? await barsResponse.json() : {};
     const marketCaps = await loadCaps(symbols);
+    const quotes: Record<string, unknown> = {};
+    const now = Date.now();
+    const monthTarget = now - 30 * 24 * 60 * 60 * 1000;
+    const yearTarget = now - 365 * 24 * 60 * 60 * 1000;
+
     for (const symbol of symbols) {
       const snap = snapshots[symbol];
       const price = Number(snap?.latestTrade?.p ?? snap?.dailyBar?.c ?? snap?.prevDailyBar?.c ?? 0) || null;
       const previousClose = Number(snap?.prevDailyBar?.c ?? 0) || null;
       const dayChange = price && previousClose ? (price / previousClose - 1) * 100 : null;
-      const month = monthBars.bars?.[symbol] ?? [];
-      const year = yearBars.bars?.[symbol] ?? [];
-      const monthStart = month.length ? Number(month[0].c) : null;
-      const yearStart = year.length ? Number(year[0].c) : null;
+      const bars = historical.bars?.[symbol] ?? [];
+      const referenceClose = (target: number) => {
+        const eligible = bars.filter(bar => new Date(bar.t).getTime() <= target && Number(bar.c) > 0);
+        return eligible.length ? Number(eligible[eligible.length - 1].c) : null;
+      };
+      const monthReference = referenceClose(monthTarget);
+      const yearReference = referenceClose(yearTarget);
       quotes[symbol] = {
         price,
         dayChange,
-        monthChange: monthStart && price ? (price / monthStart - 1) * 100 : null,
-        yearChange: yearStart && price ? (price / yearStart - 1) * 100 : null,
+        monthChange: monthReference && price ? (price / monthReference - 1) * 100 : null,
+        yearChange: yearReference && price ? (price / yearReference - 1) * 100 : null,
+        dayVolume: Number(snap?.dailyBar?.v ?? 0) || null,
+        marketCap: marketCaps.get(symbol) ?? null,
         asOf: snap?.latestTrade?.t ?? snap?.dailyBar?.t ?? null,
       };
     }
@@ -83,11 +91,12 @@ export async function GET(req: Request) {
   }
 }
 
-function buildBarsUrl(symbols: string[], limit: number) {
+function buildBarsUrl(symbols: string[], start: Date) {
   const url = new URL("https://data.alpaca.markets/v2/stocks/bars");
   url.searchParams.set("symbols", symbols.join(","));
   url.searchParams.set("timeframe", "1Day");
-  url.searchParams.set("limit", String(limit));
+  url.searchParams.set("start", start.toISOString());
+  url.searchParams.set("limit", "10000");
   url.searchParams.set("feed", "iex");
   url.searchParams.set("sort", "asc");
   return url;
